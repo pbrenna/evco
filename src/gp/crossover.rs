@@ -37,7 +37,7 @@ impl Crossover {
     }
 
     /// Crossover (mate) two individuals according to the configured crossover mode.
-    pub fn mate<T, R>(&self, indv1: &mut Individual<T>, indv2: &mut Individual<T>, rng: R)
+    pub fn mate<T, R>(&self, indv1: &mut Individual<T>, indv2: &mut Individual<T>, rng: &mut R)
         where T: Tree,
               R: Rng
     {
@@ -52,7 +52,7 @@ impl Crossover {
     fn mate_one_point<T: Tree, R: Rng>(&self,
                                        indv1: &mut Individual<T>,
                                        indv2: &mut Individual<T>,
-                                       mut rng: R)
+                                       rng: &mut R)
         where T: Tree,
               R: Rng
     {
