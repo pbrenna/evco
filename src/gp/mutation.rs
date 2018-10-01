@@ -68,13 +68,13 @@ impl Mutation {
     }
 
     /// Mutate an individual according to the configured mutation mode.
-    pub fn mutate<T, R>(&self, indv: &mut Individual<T>, tg: &mut TreeGen<R>)
+    pub fn mutate<T, R>(&self, indv: &mut Individual<T>, tg: &mut TreeGen<R>, config: &T::Config)
         where T: Tree,
               R: Rng
     {
         match self.mode {
             MutationMode::Shrink => self.mutate_shrink(indv, tg),
-            MutationMode::Uniform => self.mutate_uniform(indv, tg),
+            MutationMode::Uniform => self.mutate_uniform(indv, tg, config),
             MutationMode::NodeReplacement => self.mutate_node_replacement(indv, tg),
             MutationMode::Ephemeral(EphemeralMode::One) => self.mutate_ephemeral_one(indv, tg),
             MutationMode::Ephemeral(EphemeralMode::All) => self.mutate_ephemeral_all(indv, tg),
@@ -89,13 +89,13 @@ impl Mutation {
         unimplemented!();
     }
 
-    fn mutate_uniform<T, R>(&self, indv: &mut Individual<T>, tg: &mut TreeGen<R>)
+    fn mutate_uniform<T, R>(&self, indv: &mut Individual<T>, tg: &mut TreeGen<R>, config: &T::Config)
         where T: Tree,
               R: Rng
     {
         let target_index = tg.gen_range(0, indv.nodes_count());
         indv.tree.map_while(|node, index, _| if index == target_index {
-            *node = T::tree(tg).inner();
+            *node = T::tree(tg, config).inner();
             false
         } else {
             true

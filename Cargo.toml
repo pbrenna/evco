@@ -2,7 +2,7 @@
 name = "evco"
 version = "0.2.1"
 authors = ["Michael Mokrysz <hi@46b.it>"]
-repository = "https://github.com/46bit/evco.git"
+#repository = "https://github.com/46bit/evco.git"
 homepage = "https://github.com/46bit/evco"
 license = "LGPL-3.0"
 readme = "README.md"

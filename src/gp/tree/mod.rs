@@ -17,25 +17,28 @@ pub trait Tree
     /// The type the tree will evaluate to.
     type Action;
 
+    /// The configuration to be passed when generating a tree.
+    type Config;
+
     /// Generate a new tree within the bounds specified by TreeGen.
-    fn tree<R: Rng>(tg: &mut TreeGen<R>) -> BoxTree<Self> {
-        Self::child(tg, 0)
+    fn tree<R: Rng>(tg: &mut TreeGen<R>, config: &Self::Config) -> BoxTree<Self> {
+        Self::child(tg, 0, config)
     }
 
     /// Generate a random new node to go into a tree.
-    fn child<R: Rng>(tg: &mut TreeGen<R>, current_depth: usize) -> BoxTree<Self> {
+    fn child<R: Rng>(tg: &mut TreeGen<R>, current_depth: usize, config: &Self::Config) -> BoxTree<Self> {
         if tg.have_reached_a_leaf(current_depth) {
-            Self::leaf(tg, current_depth)
+            Self::leaf(tg, current_depth, config)
         } else {
-            Self::branch(tg, current_depth)
+            Self::branch(tg, current_depth, config)
         }
     }
 
     /// Generate a branch node (a node with at least one Tree child).
-    fn branch<R: Rng>(tg: &mut TreeGen<R>, current_depth: usize) -> BoxTree<Self>;
+    fn branch<R: Rng>(tg: &mut TreeGen<R>, current_depth: usize, config: &Self::Config) -> BoxTree<Self>;
 
     /// Generate a leaf node (a node without any Tree children).
-    fn leaf<R: Rng>(tg: &mut TreeGen<R>, current_depth: usize) -> BoxTree<Self>;
+    fn leaf<R: Rng>(tg: &mut TreeGen<R>, current_depth: usize, config: &Self::Config) -> BoxTree<Self>;
 
     /// Count `Self` children of this node.
     fn count_children(&mut self) -> usize;

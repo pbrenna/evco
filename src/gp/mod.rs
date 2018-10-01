@@ -28,8 +28,8 @@ impl<T> Individual<T>
     where T: Tree
 {
     /// Generate a new Tree and individual.
-    pub fn new<R: Rng>(tg: &mut TreeGen<R>) -> Individual<T> {
-        Self::new_from_tree(T::tree(tg))
+    pub fn new<R: Rng>(tg: &mut TreeGen<R>, config: &T::Config) -> Individual<T> {
+        Self::new_from_tree(T::tree(tg, config))
     }
 
     /// Create from a Tree.

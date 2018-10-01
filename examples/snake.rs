@@ -155,15 +155,17 @@ pub enum SnakeTree {
 }
 
 use SnakeTree::*;
+pub struct NoConfig;
 
 impl Tree for SnakeTree {
     type Environment = SnakeEnvironment;
     type Action = TurnDirection;
+    type Config = NoConfig;
 
-    fn branch<R: Rng>(tg: &mut TreeGen<R>, current_depth: usize) -> BoxTree<Self> {
+    fn branch<R: Rng>(tg: &mut TreeGen<R>, current_depth: usize, config: &Self::Config) -> BoxTree<Self> {
         let direction = TurnDirection::rand(tg);
-        let true_ = Self::child(tg, current_depth + 1);
-        let false_ = Self::child(tg, current_depth + 1);
+        let true_ = Self::child(tg, current_depth + 1, config);
+        let false_ = Self::child(tg, current_depth + 1, config);
         if tg.gen() {
             IfDanger(direction, true_, false_).into()
         } else {
@@ -171,7 +173,7 @@ impl Tree for SnakeTree {
         }
     }
 
-    fn leaf<R: Rng>(tg: &mut TreeGen<R>, _: usize) -> BoxTree<Self> {
+    fn leaf<R: Rng>(tg: &mut TreeGen<R>, _: usize, config: &Self::Config) -> BoxTree<Self> {
         Move(TurnDirection::rand(tg)).into()
     }
 
@@ -252,8 +254,8 @@ fn main() {
     let mut rng = OsRng::new().unwrap();
     let mut tree_gen = TreeGen::full(&mut rng, 1, 4);
 
-    let mut indv1: Individual<SnakeTree> = Individual::new(&mut tree_gen);
-    let mut indv2: Individual<SnakeTree> = Individual::new(&mut tree_gen);
+    let mut indv1: Individual<SnakeTree> = Individual::new(&mut tree_gen, &NoConfig);
+    let mut indv2: Individual<SnakeTree> = Individual::new(&mut tree_gen, &NoConfig);
 
     let mut rng = OsRng::new().unwrap();
     let crossover = Crossover::one_point();
@@ -270,7 +272,7 @@ fn main() {
     let mut mutate_rng = OsRng::new().unwrap();
     let mut tree_gen = TreeGen::full(&mut mutate_rng, 1, 2);
     let mutation = Mutation::uniform();
-    mutation.mutate(&mut indv1, &mut tree_gen);
+    mutation.mutate(&mut indv1, &mut tree_gen, &NoConfig);
     println!("{}", indv1);
 
     let mut env = SnakeEnvironment {
@@ -280,7 +282,7 @@ fn main() {
     };
 
     for _ in 0..200 {
-        let indv: Individual<SnakeTree> = Individual::new(&mut tree_gen);
+        let indv: Individual<SnakeTree> = Individual::new(&mut tree_gen, &NoConfig);
 
         let mut score1 = 0;
         let mut score2 = 0;

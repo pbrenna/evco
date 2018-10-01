@@ -23,14 +23,16 @@ enum Equation {
 }
 
 use Equation::*;
+struct NoConfig;
 
 impl Tree for Equation {
     type Environment = f64;
     type Action = f64;
+    type Config = NoConfig;
 
-    fn branch<R: Rng>(tg: &mut TreeGen<R>, current_depth: usize) -> BoxTree<Self> {
-        let left = Self::child(tg, current_depth + 1);
-        let right = Self::child(tg, current_depth + 1);
+    fn branch<R: Rng>(tg: &mut TreeGen<R>, current_depth: usize, config: &Self::Config) -> BoxTree<Self> {
+        let left = Self::child(tg, current_depth + 1, config);
+        let right = Self::child(tg, current_depth + 1, config);
         match tg.gen_range(0, 7) {
                 0 => Add(left, right),
                 1 => Sub(left, right),
@@ -44,7 +46,7 @@ impl Tree for Equation {
             .into()
     }
 
-    fn leaf<R: Rng>(tg: &mut TreeGen<R>, _: usize) -> BoxTree<Self> {
+    fn leaf<R: Rng>(tg: &mut TreeGen<R>, _: usize, config: &Self::Config) -> BoxTree<Self> {
         match tg.gen_range(0, 2) {
                 0 => Int(tg.gen_range(-1, 2)),
                 1 => Input,
@@ -165,7 +167,7 @@ fn main() {
         .collect();
 
     let mut population: Vec<Individual<Equation>> =
-        (0..200).map(|_| Individual::new(&mut tree_gen)).collect();
+        (0..200).map(|_| Individual::new(&mut tree_gen, &NoConfig)).collect();
     for round in 0..40 {
         let mut ranking = BinaryHeap::new();
         for individual in population.drain(..) {
@@ -205,10 +207,10 @@ fn main() {
             crossover.mate(&mut indv1, &mut indv2, &mut rng);
 
             if rng.gen() {
-                mutation.mutate(&mut indv1, &mut mut_tree_gen);
+                mutation.mutate(&mut indv1, &mut mut_tree_gen, &NoConfig);
             }
             if rng.gen() {
-                mutation.mutate(&mut indv2, &mut mut_tree_gen);
+                mutation.mutate(&mut indv2, &mut mut_tree_gen, &NoConfig);
             }
 
             population.push(indv1);
