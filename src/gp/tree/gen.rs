@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::{Rng, RngCore};
 
 /// The tree generation mode in use. See `TreeGen`.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -12,28 +12,30 @@ enum TreeGenMode {
 }
 
 /// Configures depth and properties of GP trees.
-#[derive(PartialEq, Eq, Debug)]
-pub struct TreeGen<'a, R>
-    where R: 'a + Rng
+#[derive(PartialEq, Eq, Debug, Clone)]
+pub struct TreeGen<R>
+where
+    R: Rng,
 {
     /// Which tree depth logic to use.
     mode: TreeGenMode,
     /// A `rand::Rng` implementation for generating random tree nodes.
-    rng: &'a mut R,
+    rng: R,
     /// The minimum depth of trees to generate.
     min_depth: usize,
     /// The maximum depth of trees to generate.
     max_depth: usize,
 }
 
-impl<'a, R> TreeGen<'a, R>
-    where R: 'a + Rng
+impl<R> TreeGen<R>
+where
+    R: Rng,
 {
     /// Generate perfect trees. All leaves are at the same depth in the range
     /// [min_depth, max_depth].
     ///
     /// **This is the equivalent of DEAP's `genFull`.**
-    pub fn perfect(rng: &mut R, min_depth: usize, max_depth: usize) -> TreeGen<R> {
+    pub fn perfect(mut rng: R, min_depth: usize, max_depth: usize) -> TreeGen<R> {
         let chosen_depth = rng.gen_range(min_depth, max_depth + 1);
         TreeGen {
             rng: rng,
@@ -47,7 +49,7 @@ impl<'a, R> TreeGen<'a, R>
     /// linearly distributed between min_depth and a chosen depth in the range.
     ///
     /// **This is NOT the same as DEAP's `genFull`. See `TreeGen::perfect`.**
-    pub fn full(rng: &mut R, min_depth: usize, max_depth: usize) -> TreeGen<R> {
+    pub fn full(rng: R, min_depth: usize, max_depth: usize) -> TreeGen<R> {
         TreeGen {
             rng: rng,
             mode: TreeGenMode::Full,
@@ -60,7 +62,7 @@ impl<'a, R> TreeGen<'a, R>
     /// linearly distributed between min_depth and a chosen depth in the range.
     ///
     /// **This is the equivalent of DEAP's `genGrow`.**
-    pub fn full_ranged(rng: &mut R, min_depth: usize, max_depth: usize) -> TreeGen<R> {
+    pub fn full_ranged(mut rng: R, min_depth: usize, max_depth: usize) -> TreeGen<R> {
         let chosen_depth = rng.gen_range(min_depth, max_depth + 1);
         TreeGen {
             rng: rng,
@@ -74,7 +76,7 @@ impl<'a, R> TreeGen<'a, R>
     ///
     /// **This is the equivalent of DEAP's `genHalfAndHalf`.**
     // @TODO: This choice needs to happen at runtime.
-    pub fn half_and_half(rng: &mut R, min_depth: usize, max_depth: usize) -> TreeGen<R> {
+    pub fn half_and_half(mut rng: R, min_depth: usize, max_depth: usize) -> TreeGen<R> {
         if rng.gen() {
             Self::perfect(rng, min_depth, max_depth)
         } else {
@@ -92,8 +94,9 @@ impl<'a, R> TreeGen<'a, R>
                 // we do finally place a Leaf.
                 let depth_interval = self.max_depth - self.min_depth;
                 // @TODO: Avoid converting depth_interval.
-                current_depth == self.max_depth ||
-                (current_depth >= self.min_depth) && self.gen_weighted_bool(depth_interval as u32)
+                current_depth == self.max_depth
+                    || (current_depth >= self.min_depth)
+                        && self.gen_bool(1.0 / depth_interval as f64)
             }
             TreeGenMode::FullRanged(chosen_depth) => {
                 // This given an equal 1-in-depth_interval chance at every intermediary depth.
@@ -101,15 +104,17 @@ impl<'a, R> TreeGen<'a, R>
                 // we do finally place a Leaf.
                 let depth_interval = chosen_depth - self.min_depth;
                 // @TODO: Avoid converting depth_interval.
-                current_depth == chosen_depth ||
-                (current_depth >= self.min_depth) && self.gen_weighted_bool(depth_interval as u32)
+                current_depth == chosen_depth
+                    || (current_depth >= self.min_depth)
+                        && self.gen_bool(1.0 / depth_interval as f64)
             }
         }
     }
 }
 
-impl<'a, R> Rng for TreeGen<'a, R>
-    where R: 'a + Rng
+impl<R> RngCore for TreeGen<R>
+where
+    R: Rng,
 {
     fn next_u32(&mut self) -> u32 {
         self.rng.next_u32()
@@ -123,5 +128,8 @@ impl<'a, R> Rng for TreeGen<'a, R>
 
     fn fill_bytes(&mut self, dest: &mut [u8]) {
         self.rng.fill_bytes(dest)
+    }
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
+        self.rng.try_fill_bytes(dest)
     }
 }
