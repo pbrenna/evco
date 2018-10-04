@@ -9,6 +9,7 @@ enum CrossoverMode {
     OnePoint,
     /// Corresponds to `Crossover::one_point_leaf_biased`.
     OnePointLeafBiased(f32),
+    HardPrune(usize),
 }
 
 /// Configures crossover (mating) between GP individuals.
@@ -40,6 +41,17 @@ impl Crossover {
         }
     }
 
+    /// Get an operator to perform one-point crossover between two individuals.
+    /// 
+    /// The subtree at a random position in one individual will be swapped with a random
+    /// position in a second individual. Then the subrees will be pruned at `max_depth`
+    /// and replaced with the first leaf they contain (depth-first search)
+    pub fn hard_prune(max_depth: usize) -> Crossover {
+        Crossover {
+            mode: CrossoverMode::HardPrune(max_depth)
+        }
+    }
+
     /// Crossover (mate) two individuals according to the configured crossover mode.
     pub fn mate<T, R>(&self, indv1: &mut Individual<T>, indv2: &mut Individual<T>, rng: &mut R)
     where
@@ -50,6 +62,9 @@ impl Crossover {
             CrossoverMode::OnePoint => self.mate_one_point(indv1, indv2, rng),
             CrossoverMode::OnePointLeafBiased(termpb) => {
                 self.mate_one_point_leaf_biased(indv1, indv2, termpb, rng)
+            }
+            CrossoverMode::HardPrune(max_depth) => {
+                self.mate_hard_prune(indv1, indv2, max_depth, rng)
             }
         }
     }
@@ -124,5 +139,36 @@ impl Crossover {
                 true
             }
         });
+    }
+    fn mate_hard_prune<T, R>(
+        &self,
+        indv1: &mut Individual<T>,
+        indv2: &mut Individual<T>,
+        max_depth: usize,
+        rng: &mut R,
+    ) where
+        T: Tree,
+        R: Rng,
+    {
+        self.mate_one_point(indv1, indv2, rng);
+        let prune_func = |node: &mut T, _, depth| { 
+            if depth == max_depth && node.count_children() != 0 {
+                //sceglie la prima foglia che trova
+                let mut nuovo = Self::first_leaf(node);
+                mem::swap(&mut nuovo, &mut &*node);
+            }
+        };
+        indv1.tree.map(prune_func);
+        //indv2.tree.map(prune_func);
+    }
+
+    fn first_leaf<T>(node: &T) -> &T where T: Tree {
+        let children = node.children();
+        if !children.is_empty() {
+            let first_child = children[0];
+            Self::first_leaf(first_child)
+        } else {
+            node
+        }
     }
 }
