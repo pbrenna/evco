@@ -151,14 +151,13 @@ impl Crossover {
         R: Rng,
     {
         self.mate_one_point(indv1, indv2, rng);
-        let prune_func = |node: &mut T, _, depth| { 
+        indv1.tree.map(|node, _, depth| { 
             if depth == max_depth && node.count_children() != 0 {
                 //sceglie la prima foglia che trova
-                let mut nuovo = Self::first_leaf(node);
-                mem::swap(&mut nuovo, &mut &*node);
+                let mut nuovo = Self::first_leaf(node).clone();
+                mem::swap(&mut nuovo, node);
             }
-        };
-        indv1.tree.map(prune_func);
+        });
         //indv2.tree.map(prune_func);
     }
 
