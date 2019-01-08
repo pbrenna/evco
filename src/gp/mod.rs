@@ -56,7 +56,7 @@ impl<T> Individual<T>
     pub fn prune_at(&mut self, max_depth: usize) where T:Tree {
         use std::mem;
         self.tree.map(|node, _, depth| { 
-            if depth == max_depth-1 && node.count_children() != 0 {
+            if depth == max_depth && node.count_children() != 0 {
                 //sceglie la prima foglia che trova
                 let mut nuovo = first_leaf(node).clone();
                 //println!("Sostiuisco {:?} con {:?}", node, nuovo);
