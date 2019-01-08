@@ -51,6 +51,29 @@ impl<T> Individual<T>
     pub fn recalculate_metadata(&mut self) {
         self.nodes_count = self.tree.count_nodes();
     }
+    
+    /// Prune this individual's tree at max_depth.
+    pub fn prune_at(&mut self, max_depth: usize) where T:Tree {
+        use std::mem;
+        self.tree.map(|node, _, depth| { 
+            if depth == max_depth-1 && node.count_children() != 0 {
+                //sceglie la prima foglia che trova
+                let mut nuovo = first_leaf(node).clone();
+                //println!("Sostiuisco {:?} con {:?}", node, nuovo);
+                mem::swap(&mut nuovo, node);
+            }
+        });
+    }
+}
+
+fn first_leaf<T>(node: &T) -> &T where T: Tree {
+    let children = node.children();
+    if !children.is_empty() {
+        let first_child = children[0];
+        first_leaf(first_child)
+    } else {
+        node
+    }
 }
 
 impl<T> fmt::Display for Individual<T>

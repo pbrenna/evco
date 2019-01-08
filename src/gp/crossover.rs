@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use gp::*;
 use rand::Rng;
 use std::mem;
@@ -147,27 +148,11 @@ impl Crossover {
         max_depth: usize,
         rng: &mut R,
     ) where
-        T: Tree,
+        T: Tree + Debug,
         R: Rng,
     {
         self.mate_one_point(indv1, indv2, rng);
-        indv1.tree.map(|node, _, depth| { 
-            if depth == max_depth && node.count_children() != 0 {
-                //sceglie la prima foglia che trova
-                let mut nuovo = Self::first_leaf(node).clone();
-                mem::swap(&mut nuovo, node);
-            }
-        });
-        //indv2.tree.map(prune_func);
+        indv1.prune_at(max_depth);
     }
 
-    fn first_leaf<T>(node: &T) -> &T where T: Tree {
-        let children = node.children();
-        if !children.is_empty() {
-            let first_child = children[0];
-            Self::first_leaf(first_child)
-        } else {
-            node
-        }
-    }
 }
